@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<concrete5-cif version="1.0">
+    <singlepages>
+        <page name="MCP Server" path="/dashboard/system/mcp" filename="/dashboard/system/mcp/view.php"
+              pagetype="" description="Model Context Protocol server for AI assistants." package="ortic_mcp_server">
+        </page>
+        <page name="Settings" path="/dashboard/system/mcp/settings" filename="/dashboard/system/mcp/settings.php"
+              pagetype="" description="Enable the MCP server and choose which tools it exposes." package="ortic_mcp_server">
+            <attributes>
+                <attributekey handle="meta_keywords">
+                    <value>MCP, AI, Claude, model context protocol, tools, developer</value>
+                </attributekey>
+            </attributes>
+        </page>
+        <page name="Access" path="/dashboard/system/mcp/access" filename="/dashboard/system/mcp/access.php"
+              pagetype="" description="Access tokens, OAuth clients and connected apps." package="ortic_mcp_server">
+        </page>
+        <page name="Activity" path="/dashboard/system/mcp/activity" filename="/dashboard/system/mcp/activity.php"
+              pagetype="" description="Audit log of MCP tool calls." package="ortic_mcp_server">
+        </page>
+        <page name="File History" path="/dashboard/system/mcp/file_history" filename="/dashboard/system/mcp/file_history.php"
+              pagetype="" description="Files changed through developer mode, with revert." package="ortic_mcp_server">
+        </page>
+    </singlepages>
+    <permissionkeys>
+        <permissionkey handle="ortic_mcp_access" name="Use the MCP server"
+                       description="Can connect AI assistants to this site through the MCP server. Tools still respect all other permissions."
+                       package="ortic_mcp_server" category="admin">
+            <access>
+                <group name="Administrators" description=""/>
+            </access>
+        </permissionkey>
+        <permissionkey handle="ortic_mcp_developer" name="Use MCP developer tools"
+                       description="Can let AI assistants read and change code in application/ and packages/ when developer mode is enabled. This allows running arbitrary PHP on the server."
+                       package="ortic_mcp_server" category="admin">
+        </permissionkey>
+    </permissionkeys>
+</concrete5-cif>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema
+  xmlns="http://www.concrete5.org/doctrine-xml/0.5"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.concrete5.org/doctrine-xml/0.5 https://concretecms.github.io/doctrine-xml/doctrine-xml-0.5.xsd">
+
+  <!-- Personal access tokens and OAuth access/refresh tokens. Only SHA-256 hashes are stored. -->
+  <table name="OrticMcpTokens">
+    <field name="id" type="integer">
+      <unsigned/>
+      <autoincrement/>
+      <key/>
+    </field>
+    <field name="uID" type="integer">
+      <unsigned/>
+      <notnull/>
+    </field>
+    <field name="kind" type="string" size="16">
+      <notnull/>
+    </field>
+    <field name="name" type="string" size="255"/>
+    <field name="tokenHash" type="string" size="64">
+      <notnull/>
+    </field>
+    <field name="tokenHint" type="string" size="32"/>
+    <field name="scopes" type="string" size="255">
+      <notnull/>
+      <default value=""/>
+    </field>
+    <field name="clientID" type="string" size="128"/>
+    <field name="grantID" type="string" size="64"/>
+    <field name="createdAt" type="datetime">
+      <notnull/>
+    </field>
+    <field name="expiresAt" type="datetime"/>
+    <field name="lastUsedAt" type="datetime"/>
+    <field name="lastUsedIp" type="string" size="64"/>
+    <field name="revokedAt" type="datetime"/>
+    <index name="tokenHash">
+      <unique/>
+      <col>tokenHash</col>
+    </index>
+    <index name="uID">
+      <col>uID</col>
+    </index>
+    <index name="grantID">
+      <col>grantID</col>
+    </index>
+  </table>
+
+  <!-- OAuth clients, registered dynamically (RFC 7591) or manually in the dashboard. -->
+  <table name="OrticMcpOAuthClients">
+    <field name="id" type="integer">
+      <unsigned/>
+      <autoincrement/>
+      <key/>
+    </field>
+    <field name="clientID" type="string" size="128">
+      <notnull/>
+    </field>
+    <field name="clientSecretHash" type="string" size="64"/>
+    <field name="name" type="string" size="255"/>
+    <field name="redirectUris" type="text"/>
+    <field name="authMethod" type="string" size="32">
+      <notnull/>
+      <default value="none"/>
+    </field>
+    <field name="isDynamic" type="boolean">
+      <notnull/>
+      <default value="1"/>
+    </field>
+    <field name="createdAt" type="datetime">
+      <notnull/>
+    </field>
+    <field name="createdIp" type="string" size="64"/>
+    <field name="lastUsedAt" type="datetime"/>
+    <index name="clientID">
+      <unique/>
+      <col>clientID</col>
+    </index>
+  </table>
+
+  <!-- Short-lived OAuth authorization codes. -->
+  <table name="OrticMcpOAuthCodes">
+    <field name="id" type="integer">
+      <unsigned/>
+      <autoincrement/>
+      <key/>
+    </field>
+    <field name="codeHash" type="string" size="64">
+      <notnull/>
+    </field>
+    <field name="clientID" type="string" size="128">
+      <notnull/>
+    </field>
+    <field name="uID" type="integer">
+      <unsigned/>
+      <notnull/>
+    </field>
+    <field name="redirectUri" type="text"/>
+    <field name="codeChallenge" type="string" size="128">
+      <notnull/>
+    </field>
+    <field name="scopes" type="string" size="255">
+      <notnull/>
+      <default value=""/>
+    </field>
+    <field name="resource" type="string" size="255"/>
+    <field name="createdAt" type="datetime">
+      <notnull/>
+    </field>
+    <field name="expiresAt" type="datetime">
+      <notnull/>
+    </field>
+    <field name="usedAt" type="datetime"/>
+    <index name="codeHash">
+      <unique/>
+      <col>codeHash</col>
+    </index>
+  </table>
+
+  <!-- Audit trail of tool calls and access events. -->
+  <table name="OrticMcpAuditLog">
+    <field name="id" type="integer">
+      <unsigned/>
+      <autoincrement/>
+      <key/>
+    </field>
+    <field name="createdAt" type="datetime">
+      <notnull/>
+    </field>
+    <field name="uID" type="integer">
+      <unsigned/>
+    </field>
+    <field name="tokenID" type="integer">
+      <unsigned/>
+    </field>
+    <field name="event" type="string" size="64">
+      <notnull/>
+    </field>
+    <field name="tool" type="string" size="128"/>
+    <field name="arguments" type="text"/>
+    <field name="success" type="boolean">
+      <notnull/>
+      <default value="1"/>
+    </field>
+    <field name="message" type="text"/>
+    <field name="durationMs" type="integer">
+      <unsigned/>
+    </field>
+    <field name="ip" type="string" size="64"/>
+    <index name="createdAt">
+      <col>createdAt</col>
+    </index>
+    <index name="tool">
+      <col>tool</col>
+    </index>
+  </table>
+
+  <!-- Every developer-mode file change, with the previous content so it can be reverted. -->
+  <table name="OrticMcpFileHistory">
+    <field name="id" type="integer">
+      <unsigned/>
+      <autoincrement/>
+      <key/>
+    </field>
+    <field name="createdAt" type="datetime">
+      <notnull/>
+    </field>
+    <field name="uID" type="integer">
+      <unsigned/>
+    </field>
+    <field name="tokenID" type="integer">
+      <unsigned/>
+    </field>
+    <field name="path" type="string" size="512">
+      <notnull/>
+    </field>
+    <field name="action" type="string" size="16">
+      <notnull/>
+    </field>
+    <field name="previousContent" type="blob"/>
+    <field name="previousHash" type="string" size="64"/>
+    <field name="newHash" type="string" size="64"/>
+    <field name="newSize" type="integer">
+      <unsigned/>
+    </field>
+    <field name="restoredFromID" type="integer">
+      <unsigned/>
+    </field>
+    <index name="path">
+      <col>path</col>
+    </index>
+    <index name="createdAt">
+      <col>createdAt</col>
+    </index>
+  </table>
+
+</schema>
