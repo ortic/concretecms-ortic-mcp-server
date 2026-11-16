@@ -17,6 +17,24 @@ A Concrete CMS package that turns your site into a [Model Context Protocol](http
 
 ## Installation
 
+**ZIP download (easiest):**
+
+1. Download [ortic_mcp_server.zip](https://github.com/ortic/concretecms-ortic-mcp-server/releases/latest/download/ortic_mcp_server.zip) from the latest release.
+2. Unzip it and upload the `ortic_mcp_server` folder into the `packages` folder of your site (so that `packages/ortic_mcp_server/controller.php` exists).
+3. In the dashboard open **Extend Concrete**, find **MCP Server** under "Awaiting Installation" and click **Install**.
+
+**Composer** (for sites based on [concretecms/composer](https://github.com/concretecms/composer)):
+
+```bash
+composer config repositories.ortic-mcp-server vcs https://github.com/ortic/concretecms-ortic-mcp-server
+composer require ortic/concretecms-ortic-mcp-server
+vendor/bin/concrete c5:package:install ortic_mcp_server
+```
+
+The package is installed to `public/packages/ortic_mcp_server`. The first line is only needed as long as the package is not listed on Packagist.
+
+**Git:**
+
 ```bash
 cd /path/to/site/packages
 git clone git@github.com:ortic/concretecms-ortic-mcp-server.git ortic_mcp_server
@@ -127,3 +145,15 @@ ddev exec -d /var/www/html/dev vendor/bin/concrete c5:package:install ortic_mcp_
 ```
 
 `dev/` and `.ddev/` are not part of the package (see `.gitignore`).
+
+### Continuous integration and releases
+
+Every push and pull request runs `.github/workflows/ci.yml`: a PHP syntax check on PHP 8.1 to 8.5, `composer validate`, a test build of the ZIP, and a job that creates a Concrete CMS site, installs the package into it through Composer and checks that the MCP endpoint and the OAuth metadata answer.
+
+To publish a release, set `$pkgVersion` in `controller.php`, commit, and push a matching tag:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` then creates the GitHub release with generated notes and attaches `ortic_mcp_server.zip`, which contains the package without tests and CI files (see `.gitattributes`). A tag that does not match `$pkgVersion` fails the release; a tag with a suffix such as `v0.2.0-beta1` is published as a pre-release. The same tags are the versions Composer installs.

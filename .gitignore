@@ -4,3 +4,7 @@
 .idea/
 .vscode/
 /.playwright-mcp/
+__pycache__/
+/vendor/
+/composer.lock
+/ortic_mcp_server*.zip

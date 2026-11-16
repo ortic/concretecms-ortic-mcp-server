@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: PHP ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - name: Check PHP syntax
+        run: |
+          status=0
+          while IFS= read -r -d '' file; do
+            php -d display_errors=1 -l "$file" > /dev/null || status=1
+          done < <(git ls-files -z '*.php')
+          exit $status
+      - name: Validate composer.json
+        run: composer validate --no-check-lock
+
+  package:
+    name: Build ZIP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and check the release ZIP
+        run: bash .github/scripts/build-zip.sh HEAD ortic_mcp_server.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ortic_mcp_server
+          path: ortic_mcp_server.zip
+          if-no-files-found: error
+
+  install:
+    name: Install in Concrete CMS (Composer)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: concrete
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: package
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, intl, pdo_mysql, zip, mbstring, curl, dom, fileinfo
+          coverage: none
+          tools: composer:v2
+      - name: Create a Concrete CMS site
+        run: composer create-project --no-interaction --no-progress concretecms/composer site
+      - name: Require the package through Composer
+        working-directory: site
+        run: |
+          composer config repositories.package '{"type": "path", "url": "../package", "options": {"symlink": false}}'
+          composer require --no-interaction --no-progress 'ortic/concretecms-ortic-mcp-server:*@dev'
+          test -f public/packages/ortic_mcp_server/controller.php
+      - name: Install Concrete CMS
+        working-directory: site
+        run: |
+          mkdir -p public/application/files
+          vendor/bin/concrete c5:install --no-interaction \
+            --db-server=127.0.0.1 --db-username=root --db-password=root --db-database=concrete \
+            --site="MCP CI" --starting-point=atomik_full \
+            --admin-email=admin@example.com --admin-password='Ci-0nly-Passw0rd!' \
+            --canonical-url=http://127.0.0.1:8080
+      - name: Install the package
+        working-directory: site
+        run: vendor/bin/concrete c5:package:install ortic_mcp_server
+      - name: Check the MCP endpoint
+        working-directory: site
+        run: |
+          php -S 127.0.0.1:8080 -t public > server.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -s -o /dev/null http://127.0.0.1:8080/index.php && break
+            sleep 1
+          done
+
+          base=http://127.0.0.1:8080/index.php
+          fail() { echo "::error::$1"; cat server.log; exit 1; }
+
+          # Without a token the endpoint must answer 401 with an OAuth challenge.
+          status=$(curl -s -o body.txt -D headers.txt -w '%{http_code}' -X POST "$base/ccm/mcp" \
+            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}')
+          cat headers.txt body.txt; echo
+          [ "$status" = 401 ] || fail "Expected 401 from /ccm/mcp, got $status"
+          grep -qi '^WWW-Authenticate:' headers.txt || fail "Missing WWW-Authenticate header"
+
+          # The OAuth discovery documents must be valid JSON.
+          for path in /.well-known/oauth-protected-resource/ccm/mcp /.well-known/oauth-authorization-server; do
+            curl -sf "$base$path" -o metadata.json || fail "$path did not return 200"
+            php -r 'json_decode(file_get_contents("metadata.json"), false, 512, JSON_THROW_ON_ERROR);' || fail "$path is not JSON"
+          done
