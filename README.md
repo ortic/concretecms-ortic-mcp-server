@@ -26,12 +26,11 @@ A Concrete CMS package that turns your site into a [Model Context Protocol](http
 **Composer** (for sites based on [concretecms/composer](https://github.com/concretecms/composer)):
 
 ```bash
-composer config repositories.ortic-mcp-server vcs https://github.com/ortic/concretecms-ortic-mcp-server
 composer require ortic/concretecms-ortic-mcp-server
 vendor/bin/concrete c5:package:install ortic_mcp_server
 ```
 
-The package is installed to `public/packages/ortic_mcp_server`. The first line is only needed as long as the package is not listed on Packagist.
+The package is installed to `public/packages/ortic_mcp_server`.
 
 **Git:**
 
