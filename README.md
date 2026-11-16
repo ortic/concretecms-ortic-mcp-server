@@ -156,3 +156,7 @@ git tag v0.1.0 && git push origin v0.1.0
 ```
 
 `.github/workflows/release.yml` then creates the GitHub release with generated notes and attaches `ortic_mcp_server.zip`, which contains the package without tests and CI files (see `.gitattributes`). A tag that does not match `$pkgVersion` fails the release; a tag with a suffix such as `v0.2.0-beta1` is published as a pre-release. The same tags are the versions Composer installs.
+
+## License
+
+[MIT](LICENSE)

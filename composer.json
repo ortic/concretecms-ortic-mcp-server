@@ -2,6 +2,7 @@
     "name": "ortic/concretecms-ortic-mcp-server",
     "description": "Concrete CMS package that turns a site into a Model Context Protocol (MCP) server for AI assistants such as Claude.",
     "type": "concrete5-package",
+    "license": "MIT",
     "keywords": ["concretecms", "concrete5", "mcp", "model-context-protocol", "ai", "claude"],
     "homepage": "https://github.com/ortic/concretecms-ortic-mcp-server",
     "support": {

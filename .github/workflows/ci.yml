@@ -36,7 +36,7 @@ jobs:
           done < <(git ls-files -z '*.php')
           exit $status
       - name: Validate composer.json
-        run: composer validate --no-check-lock
+        run: composer validate --strict --no-check-lock
 
   package:
     name: Build ZIP
