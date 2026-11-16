@@ -93,7 +93,7 @@ jobs:
             --db-server=127.0.0.1 --db-username=root --db-password=root --db-database=concrete \
             --site="MCP CI" --starting-point=atomik_full \
             --admin-email=admin@example.com --admin-password='Ci-0nly-Passw0rd!' \
-            --canonical-url=http://127.0.0.1:8080
+            --canonical-url=http://127.0.0.1:8080/
       - name: Install the package
         working-directory: site
         run: vendor/bin/concrete c5:package:install ortic_mcp_server
