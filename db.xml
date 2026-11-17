@@ -23,8 +23,8 @@
     </field>
     <field name="tokenHint" type="string" size="32"/>
     <field name="scopes" type="string" size="255">
-      <notnull/>
       <default value=""/>
+      <notnull/>
     </field>
     <field name="clientID" type="string" size="128"/>
     <field name="grantID" type="string" size="64"/>
@@ -61,12 +61,12 @@
     <field name="name" type="string" size="255"/>
     <field name="redirectUris" type="text"/>
     <field name="authMethod" type="string" size="32">
-      <notnull/>
       <default value="none"/>
+      <notnull/>
     </field>
     <field name="isDynamic" type="boolean">
-      <notnull/>
       <default value="1"/>
+      <notnull/>
     </field>
     <field name="createdAt" type="datetime">
       <notnull/>
@@ -101,8 +101,8 @@
       <notnull/>
     </field>
     <field name="scopes" type="string" size="255">
-      <notnull/>
       <default value=""/>
+      <notnull/>
     </field>
     <field name="resource" type="string" size="255"/>
     <field name="createdAt" type="datetime">
@@ -140,8 +140,8 @@
     <field name="tool" type="string" size="128"/>
     <field name="arguments" type="text"/>
     <field name="success" type="boolean">
-      <notnull/>
       <default value="1"/>
+      <notnull/>
     </field>
     <field name="message" type="text"/>
     <field name="durationMs" type="integer">

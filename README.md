@@ -147,7 +147,7 @@ ddev exec -d /var/www/html/dev vendor/bin/concrete c5:package:install ortic_mcp_
 
 ### Continuous integration and releases
 
-Every push and pull request runs `.github/workflows/ci.yml`: a PHP syntax check on PHP 8.1 to 8.5, `composer validate`, a test build of the ZIP, and a job that creates a Concrete CMS site, installs the package into it through Composer and checks that the MCP endpoint and the OAuth metadata answer.
+Every push and pull request runs `.github/workflows/ci.yml`: a PHP syntax check on PHP 8.1 to 8.5, `composer validate`, schema checks of `db.xml` (doctrine-xml) and `install.xml` ([concrete-cif](https://github.com/concretecms/concrete-cif)), and a test build of the ZIP. Two install jobs then check that the MCP endpoint and the OAuth metadata answer: one creates a Concrete CMS site and installs the package through Composer, the other unzips the built ZIP into ready-made [docker5](https://github.com/concrete5-community/docker5) sites, without Composer, on the oldest supported versions (Concrete 9.5.0, PHP 8.1) and the newest.
 
 To publish a release, set `$pkgVersion` in `controller.php`, commit, and push a matching tag:
 

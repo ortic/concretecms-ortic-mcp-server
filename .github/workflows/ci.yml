@@ -105,20 +105,65 @@ jobs:
             curl -s -o /dev/null http://127.0.0.1:8080/index.php && break
             sleep 1
           done
+          bash ../package/.github/scripts/check-endpoint.sh http://127.0.0.1:8080/index.php || { cat server.log; exit 1; }
 
-          base=http://127.0.0.1:8080/index.php
-          fail() { echo "::error::$1"; cat server.log; exit 1; }
+  # The release ZIP is what most people install: unzipped into packages/, without Composer.
+  # The package's classes then load only through $pkgAutoloaderRegistries in controller.php.
+  install-zip:
+    name: Install ZIP in Concrete ${{ matrix.concrete }} (PHP ${{ matrix.php }})
+    needs: package
+    runs-on: ubuntu-latest
+    container: ghcr.io/concrete5-community/docker5:${{ matrix.concrete }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The oldest supported versions ($appVersionRequired and $phpVersionRequired in controller.php)...
+          - concrete: '9.5.0'
+            php: '8.1'
+          # ...and the newest ones.
+          - concrete: latest
+            php: '8.5'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ortic_mcp_server
+      - name: Start PHP ${{ matrix.php }}, the database and the web server
+        run: |
+          switch-php ${{ matrix.php }}
+          ccm-service start db php-fpm nginx
+      - name: Unzip the package
+        run: |
+          unzip -q ortic_mcp_server.zip -d /app/packages
+          chown -R www-data:www-data /app/packages/ortic_mcp_server
+      - name: Install the package
+        run: sudo -u www-data /app/concrete/bin/concrete --no-interaction c5:package:install ortic_mcp_server
+      - name: Check the MCP endpoint
+        run: bash .github/scripts/check-endpoint.sh http://localhost/index.php
 
-          # Without a token the endpoint must answer 401 with an OAuth challenge.
-          status=$(curl -s -o body.txt -D headers.txt -w '%{http_code}' -X POST "$base/ccm/mcp" \
-            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
-            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}')
-          cat headers.txt body.txt; echo
-          [ "$status" = 401 ] || fail "Expected 401 from /ccm/mcp, got $status"
-          grep -qi '^WWW-Authenticate:' headers.txt || fail "Missing WWW-Authenticate header"
-
-          # The OAuth discovery documents must be valid JSON.
-          for path in /.well-known/oauth-protected-resource/ccm/mcp /.well-known/oauth-authorization-server; do
-            curl -sf "$base$path" -o metadata.json || fail "$path did not return 200"
-            php -r 'json_decode(file_get_contents("metadata.json"), false, 512, JSON_THROW_ON_ERROR);' || fail "$path is not JSON"
-          done
+  xml:
+    name: XML schemas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install xmllint
+        run: |
+          if ! command -v xmllint > /dev/null; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q --no-install-recommends libxml2-utils
+          fi
+      # Concrete reads db.xml without checking it against the schema, so mistakes would go unnoticed.
+      - name: Validate db.xml against the doctrine-xml schema
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/doctrine-xml-0.5.xsd" https://concretecms.github.io/doctrine-xml/doctrine-xml-0.5.xsd
+          xmllint --noout --schema "$RUNNER_TEMP/doctrine-xml-0.5.xsd" db.xml
+      # The CIF schema uses XML Schema 1.1, which xmllint does not support.
+      - name: Validate install.xml against the CIF schema
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/concrete-cif.jar" https://github.com/concretecms/concrete-cif/releases/latest/download/concrete-cif.jar
+          java -jar "$RUNNER_TEMP/concrete-cif.jar" install.xml
